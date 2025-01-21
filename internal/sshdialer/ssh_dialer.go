@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	urlPkg "net/url"
 	"os"
@@ -139,19 +138,19 @@ func isWindowsMachine(sshClient *ssh.Client) (bool, error) {
 func networkAndAddressFromRemoteDockerHost(sshClient *ssh.Client) (network string, addr string, err error) {
 	session, err := sshClient.NewSession()
 	if err != nil {
-		return
+		return network, addr, err
 	}
 	defer session.Close()
 
 	out, err := session.CombinedOutput("set")
 	if err != nil {
-		return
+		return network, addr, err
 	}
 
 	remoteDockerHost := "unix:///var/run/docker.sock"
 	isWin, err := isWindowsMachine(sshClient)
 	if err != nil {
-		return
+		return network, addr, err
 	}
 
 	if isWin {
@@ -169,7 +168,7 @@ func networkAndAddressFromRemoteDockerHost(sshClient *ssh.Client) (network strin
 
 	remoteDockerHostURL, err := urlPkg.Parse(remoteDockerHost)
 	if err != nil {
-		return
+		return network, addr, err
 	}
 	switch remoteDockerHostURL.Scheme {
 	case "unix":
@@ -350,7 +349,7 @@ func signersToAuthMethods(signers []ssh.Signer) []ssh.AuthMethod {
 // reads key from given path
 // if necessary it will decrypt it
 func loadSignerFromFile(path string, passphrase []byte, passPhraseCallback SecretCallback) (ssh.Signer, error) {
-	key, err := ioutil.ReadFile(path)
+	key, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read key file: %w", err)
 	}

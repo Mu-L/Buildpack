@@ -57,7 +57,6 @@ func FilePathToURI(path, relativeTo string) (string, error) {
 // - windows drive: file:///C:/Documents%20and%20Settings/file.tgz
 //
 // - windows share: file://laptop/My%20Documents/file.tgz
-//
 func URIToFilePath(uri string) (string, error) {
 	var (
 		osPath string
@@ -127,7 +126,7 @@ func WindowsToSlash(p string) string {
 }
 
 // WindowsPathSID returns the appropriate SID for a given UID and GID
-// This the basic logic for path permissions in Pack and Lifecycle
+// This is the basic logic for path permissions in Pack and Lifecycle
 func WindowsPathSID(uid, gid int) string {
 	if uid == 0 && gid == 0 {
 		return "S-1-5-32-544" // BUILTIN\Administrators

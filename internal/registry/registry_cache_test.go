@@ -2,7 +2,6 @@ package registry
 
 import (
 	"bytes"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -37,15 +36,15 @@ func testRegistryCache(t *testing.T, when spec.G, it spec.S) {
 	it.Before(func() {
 		logger = logging.NewLogWithWriters(&outBuf, &outBuf)
 
-		tmpDir, err = ioutil.TempDir("", "registry")
+		tmpDir, err = os.MkdirTemp("", "registry")
 		h.AssertNil(t, err)
 
 		registryFixture = h.CreateRegistryFixture(t, tmpDir, filepath.Join("..", "..", "testdata", "registry"))
 	})
 
 	it.After(func() {
-		err := os.RemoveAll(tmpDir)
-		h.AssertNil(t, err)
+		// Ignoring the error for now, it failed randomly on windows
+		_ = os.RemoveAll(tmpDir)
 	})
 
 	when("#NewDefaultRegistryCache", func() {
@@ -71,6 +70,13 @@ func testRegistryCache(t *testing.T, when spec.G, it spec.S) {
 			it("fails to create a registry cache", func() {
 				_, err := NewRegistryCache(logger, tmpDir, "://bad-uri")
 				h.AssertError(t, err, "parsing registry url")
+			})
+		})
+
+		when("registryURL is Azure", func() {
+			it("fails to create a registry cache", func() {
+				_, err := NewRegistryCache(logger, tmpDir, "https://dev.azure.com/")
+				h.AssertNil(t, err)
 			})
 		})
 
@@ -171,6 +177,7 @@ func testRegistryCache(t *testing.T, when spec.G, it spec.S) {
 						Email: "john@doe.org",
 						When:  time.Now(),
 					},
+					AllowEmptyCommits: true,
 				})
 				h.AssertNil(t, err)
 

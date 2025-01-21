@@ -8,12 +8,14 @@ import (
 )
 
 type Buildpacks struct {
-	Include []string          `toml:"include"`
-	Exclude []string          `toml:"exclude"`
-	Group   []types.Buildpack `toml:"group"`
-	Env     Env               `toml:"env"`
-	Build   Build             `toml:"build"`
-	Builder string            `toml:"builder"`
+	Include []string            `toml:"include"`
+	Exclude []string            `toml:"exclude"`
+	Group   []types.Buildpack   `toml:"group"`
+	Env     Env                 `toml:"env"`
+	Build   Build               `toml:"build"`
+	Builder string              `toml:"builder"`
+	Pre     types.GroupAddition `toml:"pre"`
+	Post    types.GroupAddition `toml:"post"`
 }
 
 type Build struct {
@@ -26,10 +28,15 @@ type Env struct {
 }
 
 type Project struct {
-	Name          string                 `toml:"name"`
-	Licenses      []types.License        `toml:"licenses"`
-	Metadata      map[string]interface{} `toml:"metadata"`
-	SchemaVersion string                 `toml:"schema-version"`
+	SchemaVersion    string                 `toml:"schema-version"`
+	ID               string                 `toml:"id"`
+	Name             string                 `toml:"name"`
+	Version          string                 `toml:"version"`
+	Authors          []string               `toml:"authors"`
+	Licenses         []types.License        `toml:"licenses"`
+	DocumentationURL string                 `toml:"documentation-url"`
+	SourceURL        string                 `toml:"source-url"`
+	Metadata         map[string]interface{} `toml:"metadata"`
 }
 
 type IO struct {
@@ -41,11 +48,11 @@ type Descriptor struct {
 	IO      IO      `toml:"io"`
 }
 
-func NewDescriptor(projectTomlContents string) (types.Descriptor, error) {
+func NewDescriptor(projectTomlContents string) (types.Descriptor, toml.MetaData, error) {
 	versionedDescriptor := &Descriptor{}
-	_, err := toml.Decode(projectTomlContents, &versionedDescriptor)
+	tomlMetaData, err := toml.Decode(projectTomlContents, &versionedDescriptor)
 	if err != nil {
-		return types.Descriptor{}, err
+		return types.Descriptor{}, tomlMetaData, err
 	}
 
 	// backward compatibility for incorrect key
@@ -65,8 +72,10 @@ func NewDescriptor(projectTomlContents string) (types.Descriptor, error) {
 			Buildpacks: versionedDescriptor.IO.Buildpacks.Group,
 			Env:        env,
 			Builder:    versionedDescriptor.IO.Buildpacks.Builder,
+			Pre:        versionedDescriptor.IO.Buildpacks.Pre,
+			Post:       versionedDescriptor.IO.Buildpacks.Post,
 		},
 		Metadata:      versionedDescriptor.Project.Metadata,
 		SchemaVersion: api.MustParse("0.2"),
-	}, nil
+	}, tomlMetaData, nil
 }
